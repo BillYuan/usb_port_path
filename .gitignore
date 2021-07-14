@@ -2,6 +2,7 @@
 .idea/
 *.json
 *.xml
+!pyusb_chain/UsbTreeView.ini
 __pycache__/
 *.py[cod]
 *$py.class

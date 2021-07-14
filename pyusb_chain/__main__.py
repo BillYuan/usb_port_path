@@ -93,7 +93,7 @@ class USBDevicesChain(object):
         tool = UsbTreeViewTool()
         if self.args.gui:
             tool.start_gui()
-        else:
+        elif self.args.list or self.args.filter or self.args.export:
             tool.scan()
 
         if self.args.list or self.args.filter:
@@ -128,7 +128,11 @@ class USBDevicesChain(object):
             logger.exception("Fail to save json file ''{}'".format(USBDevicesChain.EXPORT_JSON_NAME))
 
 
-if __name__ == "__main__":
+def main():
     usbDevicesChain = USBDevicesChain()
     usbDevicesChain.command_process()
     usbDevicesChain.process()
+
+
+if __name__ == "__main__":
+    main()

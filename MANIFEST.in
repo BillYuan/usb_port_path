@@ -1,0 +1,6 @@
+include requirement.txt
+recursive-exclude pyusb_chain *.pyc __pycache__
+recursive-include pyusb_chain *.py *.exe *.ini *.txt
+exclude .travis.yml
+recursive-exclude test *
+recursive-exclude doc *
