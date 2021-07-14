@@ -15,6 +15,7 @@ https://github.com/BillYuan/usb_port_path
 The API to use pyusb_chain to map between port chain and port name.
 
 ```
+
 from pyusb_chain.usb_tree_view_tool import UsbTreeViewTool
 
 tool = UsbTreeViewTool()
@@ -29,10 +30,10 @@ portChain = too.get_chain_from_port("Microphone (4- USB Audio Device)")  # "1-3-
 
 
 # to get port name by the port chain
-portName = tool.get_chain_from_port("1-7-5")  # "COM16"
-portName = tool.get_chain_from_port("1-3-1:2")  # "COM11"
-portName = tool.get_chain_from_port("1-3-7-4:Speaker")  # "Speakers (4- USB Audio Device)"
-portName = tool.get_chain_from_port("1-3-7-4:Microphone")  # "Microphone (4- USB Audio Device)"
+portName = tool.get_port_from_chain("1-7-5")  # "COM16"
+portName = tool.get_port_from_chain("1-3-1:2")  # "COM11"
+portName = tool.get_port_from_chain("1-3-7-4:Speaker")  # "Speakers (4- USB Audio Device)"
+portName = tool.get_port_from_chain("1-3-7-4:Microphone")  # "Microphone (4- USB Audio Device)"
 
 ```
 
