@@ -23,7 +23,7 @@
 import os
 from setuptools import setup, find_packages
 
-version = '0.1.1'
+version = '0.1.2'
 
 install_requires = [
     'tabulate'
@@ -49,6 +49,7 @@ setup(
     long_description=long_description,
     long_description_content_type='text/markdown',
     author="Bill Yuan",
+    email="bill.yuan@qq.com",
     license="MIT License",
     install_requires=install_requires,
     packages=find_packages(),
@@ -68,5 +69,6 @@ setup(
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9"
     ],
 )

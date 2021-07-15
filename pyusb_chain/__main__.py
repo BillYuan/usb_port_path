@@ -28,6 +28,7 @@ import json
 from sys import platform
 from tabulate import tabulate
 from pyusb_chain.usb_tree_view_tool import UsbTreeViewTool
+from pyusb_chain._version import VERSION
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("pyusb_path")
@@ -48,7 +49,7 @@ class USBDevicesChain(object):
         :return: None
         """
         parser = argparse.ArgumentParser(description="Command line for port path of USB devices "
-                                                     "(COM ports / Audio Devices)")
+                                                     "(COM ports / Audio Devices)\r\nVersion:{}".format(VERSION))
         if "win32" == platform:
             parser.add_argument("-g", "--gui", action="store_true", default=False, dest="gui",
                 help="Launch GUI of USBTreeViewer.exe in Windows system")
