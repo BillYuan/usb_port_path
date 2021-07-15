@@ -50,7 +50,7 @@ class UsbTreeViewTool(object):
         """Start the UsbTreeView.exe directly
         :return: None
         """
-        subprocess.Popen(self.tool)
+        subprocess.Popen("\"{}\"".format(self.tool))
 
     def export_xml(self):
         """Use UsbTreeView.exe command line to export the XML format of all USB devices information in current PC.
@@ -59,7 +59,7 @@ class UsbTreeViewTool(object):
         randomUUID = uuid.uuid4()
         exportFile = "export_{}.xml".format(randomUUID)
         # export xml file
-        cmd = "{} /X={}".format(self.tool, exportFile)
+        cmd = "\"{} /X={}\"".format(self.tool, exportFile)
         os.system(cmd)
         return exportFile
 
