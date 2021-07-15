@@ -55,6 +55,8 @@ class USBDevicesChain(object):
                 help="Launch GUI of USBTreeViewer.exe in Windows system")
         parser.add_argument("-l", "--list", action="store_true", default=False, dest="list",
             help="List all USB devices information for COM ports and USB Audio devices")
+        parser.add_argument("-a", "--allinfo", action="store_true", default=False, dest="allinfo",
+            help="List all information of USB device, include SN and driver key")
         parser.add_argument("-f", "--filter", action="store", dest="filter",
             help="filter the key words of USB devices information")
         parser.add_argument("-e", "--export", action="store_true", default=False, dest="export",
@@ -100,10 +102,14 @@ class USBDevicesChain(object):
         if self.args.list or self.args.filter:
             devices = tool.filter(self.args.filter)
             data = []
+            headers = ["Port Chain Key", "Port Name", "Device Name"]
+            if self.args.allinfo:
+                headers.append("SN")
+                headers.append("Driver Key")
             for device in devices:
-                data = data + device.export_data(jsonFormat=False)
+                data = data + device.export_data(self.args.allinfo, jsonFormat=False)
             print("\r\n")
-            print(tabulate(data, headers=["Port Chain Key", "Port Name", "Device Name", "SN", "Driver Key"]))
+            print(tabulate(data, headers=headers))
 
         if self.args.export:
             devices = tool.filter(self.args.filter)

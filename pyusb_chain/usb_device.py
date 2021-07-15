@@ -133,8 +133,9 @@ class USBDevice(object):
         """
         return self.deviceID
 
-    def export_data(self, jsonFormat=False):
+    def export_data(self, allInfo=False, jsonFormat=False):
         """Export the USB device information to the data for Json exporting or table print
+        :param allInfo: Add all SN and Driver Key info in the list data (jsonFormat is False)
         :param jsonFormat: is dict data for json exporting, default is False
         :return: the data of dict or list
         """
@@ -143,9 +144,9 @@ class USBDevice(object):
             d["{}".format(self.portChain)] = self._get_data(isDict=True)
             return d
         else:
-            return [self._get_data()]
+            return [self._get_data(allInfo=allInfo)]
 
-    def _get_data(self, isDict=False):
+    def _get_data(self, allInfo=False, isDict=False):
         if isDict:
             d = {}
             d["Port Name"] = ""
@@ -159,8 +160,9 @@ class USBDevice(object):
             d.append(self.portChain)
             d.append("")
             d.append(self.deviceName)
-            d.append(self.sn)
-            d.append(self.driveKey)
+            if allInfo:
+                d.append(self.sn)
+                d.append(self.driveKey)
         return d
 
 
@@ -231,8 +233,9 @@ class COMPortDevice(USBDevice):
                 return None
             return self.get_com_port()
 
-    def export_data(self, jsonFormat=False):
+    def export_data(self, allInfo=False, jsonFormat=False):
         """Export the USB device information to the data for Json exporting or table print
+        :param allInfo: Add all SN and Driver Key info in the list data (jsonFormat is False)
         :param jsonFormat: is dict data for json exporting, default is False
         :return: the data of dict or list
         """
@@ -246,24 +249,24 @@ class COMPortDevice(USBDevice):
                 if jsonFormat:
                     data["{}:{}".format(self.portChain, index)] = self._get_data(isDict=True, comPort=comPort)
                 else:
-                    data.append(self._get_data(isDict=False, comPort=comPort, index=index))
+                    data.append(self._get_data(allInfo=allInfo, isDict=False, comPort=comPort, index=index))
                 index = index + 1
         else:
             if jsonFormat:
                 data["{}".format(self.portChain)] = self._get_data(isDict=True)
             else:
-                data.append(self._get_data(isDict=False))
+                data.append(self._get_data(allInfo=allInfo, isDict=False))
         return data
 
-    def _get_data(self, isDict=False, comPort=None, index=None):
-        d = super(COMPortDevice, self)._get_data(isDict=isDict)
+    def _get_data(self, allInfo=False, isDict=False, comPort=None, index=None):
+        d = super(COMPortDevice, self)._get_data(allInfo=allInfo, isDict=isDict)
         if isDict:
             if comPort:
                 d["Port Name"] = comPort
             else:
                 d["Port Name"] = self.get_com_port()
         else:
-            if index:
+            if index is not None:
                 d[0] = "{}:{}".format(self.portChain, index)
             if comPort:
                 d[1] = comPort
@@ -315,8 +318,9 @@ class AudioDevice(USBDevice):
         logger.warning("chain for audio device need end with :Microphone or :Speaker")
         return None
 
-    def export_data(self, jsonFormat=False):
+    def export_data(self, allInfo=False, jsonFormat=False):
         """Export the USB device information to the data for Json exporting or table print
+        :param allInfo: Add all SN and Driver Key info in the list data (jsonFormat is False)
         :param jsonFormat: is dict data for json exporting, default is False
         :return: the data of dict or list
         """
@@ -327,13 +331,13 @@ class AudioDevice(USBDevice):
                 data["{}:{}".format(self.portChain, "Microphone")] = self._get_data(isDict=True, portName=self.audioRecordName)
         else:
             data = []
-            data.append(self._get_data(isDict=False, portName=self.audioPlaybackName))
+            data.append(self._get_data(allInfo=allInfo, isDict=False, portName=self.audioPlaybackName))
             if self.audioRecordName:
-                data.append(self._get_data(isDict=False, portName=self.audioRecordName))
+                data.append(self._get_data(allInfo=allInfo, isDict=False, portName=self.audioRecordName))
         return data
 
-    def _get_data(self, isDict=False, portName=None):
-        d = super(AudioDevice, self)._get_data(isDict=isDict)
+    def _get_data(self, allInfo=False, isDict=False, portName=None):
+        d = super(AudioDevice, self)._get_data(allInfo=allInfo, isDict=isDict)
         if isDict:
             if portName:
                 d["Port Name"] = portName

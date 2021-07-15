@@ -40,13 +40,18 @@ portName = tool.get_port_from_chain("1-3-7-4:Microphone")  # "Microphone (4- USB
 Support command line standalone usage
 
 ```
+usage: __main__.py [-h] [-g] [-l] [-a] [-f FILTER] [-e] [-v VERBOSE]
+
 Command line for port path of USB devices (COM ports / Audio Devices)
+Version:0.1.3
 
 optional arguments:
   -h, --help            show this help message and exit
   -g, --gui             Launch GUI of USBTreeViewer.exe in Windows system
   -l, --list            List all USB devices information for COM ports and USB
                         Audio devices
+  -a, --allinfo         List all information of USB device, include SN and
+                        driver key
   -f FILTER, --filter FILTER
                         filter the key words of USB devices information
   -e, --export          export the json format with all connected USB devices
@@ -57,7 +62,7 @@ optional arguments:
 ```
 
 For example,
-1. List all devices: ```>pyusb-chain --list```
+1. List all devices: ```>pyusb-chain --list --allinfo```
 ```
 Scanning all USB devices...
 
@@ -80,7 +85,7 @@ Port Chain Key    Port Name                       Device Name                   
 3-10                                              USB Composite Device                                                                                         6
 ```
 
-2. Add filter to only list devices you required: ```>pyusb-chain --list Altera```
+2. Add filter to only list devices you required: ```>pyusb-chain --list Altera --allinfo```
 ````
 Port Chain Key    Port Name    Device Name         SN          Driver Key
 ----------------  -----------  ------------------  --------  ------------

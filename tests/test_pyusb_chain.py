@@ -291,6 +291,7 @@ def test_usb_tree_view_tool_covert():
     assert tool.get_port_from_chain("1-7-6") == "COM18"
     assert tool.get_chain_from_port("COM9") == "1-3-1:0"
     assert tool.get_port_from_chain("1-3-1:0") == "COM9"
+    assert tool.get_chain_from_port("COM9") == "1-3-1:0"
     assert tool.get_chain_from_port("COM12") == "1-3-1:3"
     assert tool.get_port_from_chain("1-3-1:3") == "COM12"
     assert tool.get_chain_from_port("Speakers (4- USB Audio Device)") == "1-3-7-4:Speaker"
