@@ -156,6 +156,22 @@ def test_usb_device_get_values_audio():
     assert len(values) == 1
     assert values[0] == "Microphone (USB Audio Device)"
 
+    # search class: Audio Endpoint, then get the Chide Device
+    values = USBDevice.get_values(
+        '\r\n Child Device 1 : Speakers_rt1050_b2b_hs0 (3- USB Audio Device)\r\n  Device ID \r\n Class : AudioEndpoint\r\nDriver KeyName\r\n\
+        \r\n  Child Device 2        : Microphone (USB Audio Device) (Audio Endpoint)\r\n  Device ID \r\n Class : AudioEndpoint\r\n',
+        r"\r\n\s+Child Device \d\s*:.*\s*Device ID.*?\s*Class\s*:\s*AudioEndpoint\s*")
+    assert len(values) == 2
+    valueSubs = USBDevice.get_values(values[0], r"Child Device \d\s*:\s*.*?\r\n\s*Device ID",
+                                     [r"Child Device \d", ":", r"\(Audio Endpoint\)", "Device ID"])
+    assert len(valueSubs) == 1
+    assert valueSubs[0] == "Speakers_rt1050_b2b_hs0 (3- USB Audio Device)"
+
+    valueSubs = USBDevice.get_values(values[1], r"Child Device \d\s*:\s*.*?\r\n\s*Device ID",
+                                     [r"Child Device \d", ":", r"\(Audio Endpoint\)", "Device ID"])
+    assert len(valueSubs) == 1
+    assert valueSubs[0] == "Microphone (USB Audio Device)"
+
 
 def test_usb_device_get_values_driver_key():
     # driver key

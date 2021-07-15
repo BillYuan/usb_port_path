@@ -287,16 +287,25 @@ class AudioDevice(USBDevice):
         """
         super(AudioDevice, self).parse()
         # parse audio playback
-        audioList = self.get_values(self.info, r"Child Device \d\s*:\s*.*?\(Audio Endpoint\)",
-                                    [r"Child Device \d", ":", r"\(Audio Endpoint\)"])
+        # search Child Device ... with Class : AudioEndpoint
+        # then parser the Audio Port name from Child Device, note that '(Audio Endpoint)' should be excluded.
+        audioList = self.get_values(self.info, r"Child Device \d\s*:.*\s*Device ID.*?\s*Class\s*:\s*AudioEndpoint\s*")
         if audioList:
-            for audio in audioList:
-                if "speaker" in audio.lower() or "headphone" in audio.lower():
-                    if not self.audioPlaybackName:
-                        self.audioPlaybackName = audio
-                elif "microphone" in audio.lower() or "record" in audio.lower() or "linein" in audio.lower():
-                    if not self.audioRecordName:
-                        self.audioRecordName = audio
+            for audioInfo in audioList:
+                audioInfoList = self.get_values(audioInfo, r"Child Device \d\s*:\s*.*?\r\n\s*Device ID",
+                                                [r"Child Device \d", ":", r"\(Audio Endpoint\)", "Device ID"])
+                self.__parse_audio_port_name(audioInfoList)
+
+    def __parse_audio_port_name(self, audioInfoList):
+        if not audioInfoList:
+            return
+        for audio in audioInfoList:
+            if "speaker" in audio.lower() or "headphone" in audio.lower():
+                if not self.audioPlaybackName:
+                    self.audioPlaybackName = audio
+            elif "microphone" in audio.lower() or "record" in audio.lower() or "linein" in audio.lower():
+                if not self.audioRecordName:
+                    self.audioRecordName = audio
 
     def get_key(self, port="speaker"):
         """The key of the USB device, it's port chain with ":Speaker" or ":Microphone"

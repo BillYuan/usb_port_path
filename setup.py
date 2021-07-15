@@ -23,7 +23,7 @@
 import os
 from setuptools import setup, find_packages
 
-version = '0.1.8'
+version = '0.1.9'
 
 install_requires = [
     'tabulate'
