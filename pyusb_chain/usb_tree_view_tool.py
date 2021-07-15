@@ -59,7 +59,7 @@ class UsbTreeViewTool(object):
         randomUUID = uuid.uuid4()
         exportFile = "export_{}.xml".format(randomUUID)
         # export xml file
-        cmd = "\"{} /X={}\"".format(self.tool, exportFile)
+        cmd = "\"{}\" /X={}".format(self.tool, exportFile)
         os.system(cmd)
         return exportFile
 
