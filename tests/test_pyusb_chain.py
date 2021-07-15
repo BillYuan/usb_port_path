@@ -139,14 +139,20 @@ def test_usb_device_get_values_audio():
     # audio playback
     values = USBDevice.get_values(
         ' Child Device 1        : Speakers (USB Audio Device) (Audio Endpoint)\r\n  Device ID \r\n',
-        r"Child Device 1\s*:\s*.*?\(Audio Endpoint\)", ["Child Device 1", ":", r"\(Audio Endpoint\)"])
+        r"Child Device \d\s*:\s*.*?\(Audio Endpoint\)", [r"Child Device \d", ":", r"\(Audio Endpoint\)"])
+    assert len(values) == 1
+    assert values[0] == "Speakers (USB Audio Device)"
+
+    values = USBDevice.get_values(
+        ' Child Device 4        : Speakers (USB Audio Device) (Audio Endpoint)\r\n  Device ID \r\n',
+        r"Child Device \d\s*:\s*.*?\(Audio Endpoint\)", [r"Child Device \d", ":", r"\(Audio Endpoint\)"])
     assert len(values) == 1
     assert values[0] == "Speakers (USB Audio Device)"
 
     # audio record
     values = USBDevice.get_values(
         ' Child Device 2        : Microphone (USB Audio Device) (Audio Endpoint)\r\n  Device ID \r\n',
-        r"Child Device 2\s*:\s*.*?\(Audio Endpoint\)", ["Child Device 2", ":", r"\(Audio Endpoint\)"])
+        r"Child Device \d\s*:\s*.*?\(Audio Endpoint\)", [r"Child Device \d", ":", r"\(Audio Endpoint\)"])
     assert len(values) == 1
     assert values[0] == "Microphone (USB Audio Device)"
 

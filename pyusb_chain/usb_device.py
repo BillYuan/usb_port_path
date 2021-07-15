@@ -287,14 +287,16 @@ class AudioDevice(USBDevice):
         """
         super(AudioDevice, self).parse()
         # parse audio playback
-        audioPlaybackList = self.get_values(self.info, r"Child Device 1\s*:\s*.*?\(Audio Endpoint\)",
-                                            ["Child Device 1", ":", r"\(Audio Endpoint\)"])
-        if audioPlaybackList:
-            self.audioPlaybackName = audioPlaybackList[0]
-        audioRecordList = self.get_values(self.info, r"Child Device 2\s*:\s*.*?\(Audio Endpoint\)",
-                                          ["Child Device 2", ":", r"\(Audio Endpoint\)"])
-        if audioRecordList:
-            self.audioRecordName = audioRecordList[0]
+        audioList = self.get_values(self.info, r"Child Device \d\s*:\s*.*?\(Audio Endpoint\)",
+                                    [r"Child Device \d", ":", r"\(Audio Endpoint\)"])
+        if audioList:
+            for audio in audioList:
+                if "speaker" in audio.lower() or "headphone" in audio.lower():
+                    if not self.audioPlaybackName:
+                        self.audioPlaybackName = audio
+                elif "microphone" in audio.lower() or "record" in audio.lower() or "linein" in audio.lower():
+                    if not self.audioRecordName:
+                        self.audioRecordName = audio
 
     def get_key(self, port="speaker"):
         """The key of the USB device, it's port chain with ":Speaker" or ":Microphone"
