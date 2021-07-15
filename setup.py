@@ -49,7 +49,7 @@ setup(
     long_description=long_description,
     long_description_content_type='text/markdown',
     author="Bill Yuan",
-    email="bill.yuan@qq.com",
+    author_email="bill.yuan@qq.com",
     license="MIT License",
     install_requires=install_requires,
     packages=find_packages(),
