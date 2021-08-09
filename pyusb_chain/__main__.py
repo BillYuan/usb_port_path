@@ -94,7 +94,7 @@ class USBDevicesChain(object):
         :return: None
         """
         tool = UsbTreeViewTool()
-        if self.args.gui:
+        if hasattr(self.args, "gui") and self.args.gui:
             tool.start_gui()
         elif self.args.list or self.args.filter or self.args.export:
             tool.scan()
@@ -136,6 +136,10 @@ class USBDevicesChain(object):
 
 
 def main():
+    if platform != "win32":
+        print("\nSorry, the pyusb-chain has not supported Linux/Mac OS!")
+        return
+
     usbDevicesChain = USBDevicesChain()
     usbDevicesChain.command_process()
     usbDevicesChain.process()

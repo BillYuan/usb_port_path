@@ -300,10 +300,10 @@ class AudioDevice(USBDevice):
         if not audioInfoList:
             return
         for audio in audioInfoList:
-            if "speaker" in audio.lower() or "headphone" in audio.lower():
+            if "sp" in audio.lower() or "headphone" in audio.lower():
                 if not self.audioPlaybackName:
                     self.audioPlaybackName = audio
-            elif "microphone" in audio.lower() or "record" in audio.lower() or "linein" in audio.lower():
+            elif "mic" in audio.lower() or "rec" in audio.lower() or "linein" in audio.lower():
                 if not self.audioRecordName:
                     self.audioRecordName = audio
 
@@ -312,9 +312,9 @@ class AudioDevice(USBDevice):
         :param port: port name to identify the Speaker or Microphone
         :return: the key port chain with ":Speaker" or ":Microphone"
         """
-        if "microphone" in port.lower():
+        if "mic" in port.lower():
             return "{}:Microphone".format(self.portChain)
-        elif "speaker" in port.lower():
+        elif "sp" in port.lower():
             return "{}:Speaker".format(self.portChain)
 
     def get_port(self, chain=None):
@@ -322,9 +322,9 @@ class AudioDevice(USBDevice):
         :param chain: the port chain with additional audio type
         :return: the port name
         """
-        if chain and "microphone" in chain.lower():
+        if chain and "mic" in chain.lower():
             return self.audioRecordName
-        elif chain and "speaker" in chain.lower():
+        elif chain and "sp" in chain.lower():
             return self.audioPlaybackName
         logger.warning("chain for audio device need end with :Microphone or :Speaker")
         return None

@@ -26,6 +26,7 @@ import pytest
 import sys
 import os
 import io
+from sys import platform
 import xml.etree.ElementTree as ET
 
 sys.path.append("..")
@@ -40,7 +41,8 @@ def test_commandline():
     sys.argv = ['.\\__main__.py', '-g', '-l', '-f', 'COM12', '-e', '-v debug']
     usbDevicesChain = USBDevicesChain()
     usbDevicesChain.command_process()
-    assert usbDevicesChain.args.gui
+    if "win32" == platform:
+        assert usbDevicesChain.args.gui
     assert usbDevicesChain.args.list
     assert usbDevicesChain.args.filter == 'COM12'
     assert usbDevicesChain.args.export

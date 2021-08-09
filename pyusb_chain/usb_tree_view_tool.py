@@ -93,9 +93,10 @@ class UsbTreeViewTool(object):
                 info = tag[0].text
                 usbSerialDeviceReg = re.compile(r"COM\d")
                 usbAudioDeviceReg = re.compile("Audio")
+                usbAudioDeviceInfoReg = re.compile("Class\s*:\s*AudioEndpoint")
                 if usbSerialDeviceReg.search(name):
                     usbDevice = COMPortDevice(name, info)
-                elif usbAudioDeviceReg.search(name):
+                elif usbAudioDeviceReg.search(name) or usbAudioDeviceInfoReg.search(info):
                     usbDevice = AudioDevice(name, info)
                 else:
                     usbDevice = USBDevice(name, info)
