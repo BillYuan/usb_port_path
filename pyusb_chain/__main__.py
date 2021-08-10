@@ -94,7 +94,7 @@ class USBDevicesChain(object):
         :return: None
         """
         tool = UsbTreeViewTool()
-        if self.args.gui:
+        if hasattr(self.args, "gui") and self.args.gui:
             tool.start_gui()
         elif self.args.list or self.args.filter or self.args.export:
             tool.scan()

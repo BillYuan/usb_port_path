@@ -25,7 +25,9 @@ import uuid
 import logging
 import re
 import subprocess
-import sys
+from sys import platform
+if "win32" != platform:
+    from serial.tools import list_ports
 import xml.etree.ElementTree as ET
 from pyusb_chain.usb_device import USBDevice, AudioDevice, COMPortDevice
 
@@ -40,22 +42,27 @@ class UsbTreeViewTool(object):
     def __init__(self):
         self.currentPath = os.path.dirname(os.path.abspath(__file__))
 
-        #: The UsbTreeView.exe location
-        self.tool = os.path.join(self.currentPath, "UsbTreeView.exe")
-
         #: Store the scanned all connected USB devices (not including USB hubs)
         self.usbDevices = []
+
+        if "win32" == platform:
+            #: The UsbTreeView.exe location
+            self.tool = os.path.join(self.currentPath, "UsbTreeView.exe")
 
     def start_gui(self):
         """Start the UsbTreeView.exe directly
         :return: None
         """
+        if "win32" != platform:
+            return
         subprocess.Popen("\"{}\"".format(self.tool))
 
     def export_xml(self):
         """Use UsbTreeView.exe command line to export the XML format of all USB devices information in current PC.
         :return: the exported file name
         """
+        if "win32" != platform:
+            return
         randomUUID = uuid.uuid4()
         exportFile = "export_{}.xml".format(randomUUID)
         # export xml file
@@ -71,18 +78,25 @@ class UsbTreeViewTool(object):
         print("Scanning all USB devices...")
         exportFile = None
         try:
-            exportFile = self.export_xml()
-            self.parse(exportFile)
+            if "win32" == platform:
+                exportFile = self.export_xml()
+                self.parse(exportFile)
+            else:
+                self.parse_linux()
         finally:
             # remove temp export file
-            if os.path.exists(exportFile):
-                os.remove(exportFile)
+            if "win32" == platform:
+                if os.path.exists(exportFile):
+                    os.remove(exportFile)
 
     def parse(self, exportFile):
-        """Pasrse the XML file that exported by UsbTreeView.exe
+        """Parse the XML file that exported by UsbTreeView.exe
         :param exportFile: the XML file that exported by UsbTreeView.exe
         :return: None
         """
+        if "win32" != platform:
+            return
+
         root = ET.parse(exportFile).getroot()
         for tag in root.iter('node'):
             name = tag.get('text')
@@ -93,12 +107,26 @@ class UsbTreeViewTool(object):
                 info = tag[0].text
                 usbSerialDeviceReg = re.compile(r"COM\d")
                 usbAudioDeviceReg = re.compile("Audio")
+                usbAudioDeviceInfoReg = re.compile("Class\s*:\s*AudioEndpoint")
                 if usbSerialDeviceReg.search(name):
                     usbDevice = COMPortDevice(name, info)
-                elif usbAudioDeviceReg.search(name):
+                elif usbAudioDeviceReg.search(name) or usbAudioDeviceInfoReg.search(info):
                     usbDevice = AudioDevice(name, info)
                 else:
                     usbDevice = USBDevice(name, info)
+                usbDevice.parse()
+                self.usbDevices.append(usbDevice)
+
+    def parse_linux(self):
+        """Parse the USB serial by pyserial, note that it only support VCOM usb devices
+            :return: None
+        """
+        if "win32" == platform:
+            return
+        ports = list_ports.comports()
+        for port in ports:
+            if port.pid:
+                usbDevice = COMPortDevice(port.description, port)
                 usbDevice.parse()
                 self.usbDevices.append(usbDevice)
 

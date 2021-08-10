@@ -21,13 +21,20 @@
 # SOFTWARE.
 
 import os
+from sys import platform
 from setuptools import setup, find_packages
 
-version = '0.1.9'
+version = '0.2.1'
 
-install_requires = [
-    'tabulate'
-]
+if "win32" == platform:
+    install_requires = [
+        'tabulate'
+    ]
+else:
+    install_requires = [
+        'tabulate',
+        'pyserial'
+    ]
 
 version_file = os.path.join(os.path.dirname(
     os.path.abspath(__file__)), 'pyusb_chain/_version.py')
@@ -49,7 +56,7 @@ setup(
     long_description=long_description,
     long_description_content_type='text/markdown',
     author="Bill Yuan",
-    email="bill.yuan@qq.com",
+    author_email="bill.yuan@qq.com",
     license="MIT License",
     install_requires=install_requires,
     packages=find_packages(),
