@@ -186,11 +186,11 @@ class COMPortDevice(USBDevice):
             if comPortList:
                 self.comPorts = comPortList
         else:
-            self.deviceName = self.info.manufacturer
+            self.deviceName = self.info.description
             if self.info.location:
                 self.portChain = self.info.location.split(":")[0].replace(".", "-")
             self.locInfo = self.info.hwid
-            self.deviceID = "USB\VID_{}&PID_{}".format(self.info.vid, self.info.pid)
+            self.deviceID = "USB/VID_{}&PID_{}".format(self.info.vid, self.info.pid)
             self.sn = self.info.serial_number
             if self.info.device:
                 self.comPorts = self.info.device.split(",")

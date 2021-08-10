@@ -125,9 +125,10 @@ class UsbTreeViewTool(object):
             return
         ports = list_ports.comports()
         for port in ports:
-            usbDevice = COMPortDevice(port.description, port)
-            usbDevice.parse()
-            self.usbDevices.append(usbDevice)
+            if port.pid:
+                usbDevice = COMPortDevice(port.description, port)
+                usbDevice.parse()
+                self.usbDevices.append(usbDevice)
 
     def get_from_sn(self, sn):
         """Get the usb device by the SN if the devcie has the SN.

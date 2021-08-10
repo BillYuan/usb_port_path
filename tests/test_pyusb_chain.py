@@ -82,7 +82,7 @@ def test_filter_data():
         assert len(devices) == 2
     else:
         tool.parse_linux()
-        devices = tool.filter("COM")
+        devices = tool.filter("tty")
         assert len(devices) > 1
         # for linux, so far, only support VCOM
         devices = tool.filter("Audio")
