@@ -48,6 +48,7 @@ def test_commandline():
     assert usbDevicesChain.args.export
 
 
+@pytest.mark.skipif('win32' != platform, reason="requires the windows os")
 def test_export_xml():
     tool = UsbTreeViewTool()
     exportedFile = tool.export_xml()
@@ -58,6 +59,7 @@ def test_export_xml():
     os.remove(exportedFile)
 
 
+@pytest.mark.skipif('win32' != platform, reason="requires the windows os")
 def test_usb_tree_parse():
     exportXMLFile = os.path.join(CUR_PATH, "export_test.xml")
     tool = UsbTreeViewTool()
@@ -66,31 +68,46 @@ def test_usb_tree_parse():
 
 
 def test_filter_data():
-    exportXMLFile = os.path.join(CUR_PATH, "export_test.xml")
     tool = UsbTreeViewTool()
-    tool.parse(exportXMLFile)
-    devices = tool.filter("COM16")
-    assert len(devices) == 1
+    if "win32" == platform:
+        exportXMLFile = os.path.join(CUR_PATH, "export_test.xml")
+        tool.parse(exportXMLFile)
+        devices = tool.filter("COM16")
+        assert len(devices) == 1
 
-    devices = tool.filter("Audio")
-    assert len(devices) == 3
+        devices = tool.filter("Audio")
+        assert len(devices) == 3
 
-    devices = tool.filter("CP2102")
-    assert len(devices) == 2
+        devices = tool.filter("CP2102")
+        assert len(devices) == 2
+    else:
+        tool.parse_linux()
+        devices = tool.filter("COM")
+        assert len(devices) > 1
+        # for linux, so far, only support VCOM
+        devices = tool.filter("Audio")
+        assert len(devices) == 0
 
 
 def test_export_json():
     exportXMLFile = os.path.join(CUR_PATH, "export_test.xml")
     tool = UsbTreeViewTool()
-    tool.parse(exportXMLFile)
+    if "win32" == platform:
+        tool.parse(exportXMLFile)
+    else:
+        tool.parse_linux()
     USBDevicesChain.export_json(tool.usbDevices)
     jsonData = None
     with io.open(USBDevicesChain.EXPORT_JSON_NAME, 'r', encoding='utf8') as f:
         jsonData = json.loads(f.read())
     os.remove(USBDevicesChain.EXPORT_JSON_NAME)
-    assert len(jsonData) == 20
+    if "win32" == platform:
+        assert len(jsonData) == 20
+    else:
+        assert len(jsonData) > 1
 
 
+@pytest.mark.skipif('win32' != platform, reason="requires the windows os")
 def test_usb_device_get_values_location_info():
     # base USB device
     values = USBDevice.get_values(
@@ -100,6 +117,7 @@ def test_usb_device_get_values_location_info():
     assert values[0] == "Port_#0002.Hub_#0008"
 
 
+@pytest.mark.skipif('win32' != platform, reason="requires the windows os")
 def test_usb_device_get_values_device_id():
     values = USBDevice.get_values(
         "\r\nKernel Name: \\Device\\USBPDO-24\r\nDevice ID  : USB\\VID_10C4&PID_EA60\\EVKMIMXRT1170_1_A\r\nHardware IDs : USB\\VID_10C4&PID_EA60&REV_0100 USB\\VID_10C4&PID_EA60",
@@ -108,6 +126,7 @@ def test_usb_device_get_values_device_id():
     assert values[0] == "USB\\VID_10C4&PID_EA60\\EVKMIMXRT1170_1_A"
 
 
+@pytest.mark.skipif('win32' != platform, reason="requires the windows os")
 def test_usb_device_get_values_sn():
     # base USB device SN
     values = USBDevice.get_values(
@@ -118,6 +137,7 @@ def test_usb_device_get_values_sn():
     assert values[0] == "evkmimxrt1170_1_a"
 
 
+@pytest.mark.skipif('win32' != platform, reason="requires the windows os")
 def test_usb_device_get_values_comport():
     # Com port
     values = USBDevice.get_values(
@@ -127,6 +147,7 @@ def test_usb_device_get_values_comport():
     assert values[0] == "COM16"
 
 
+@pytest.mark.skipif('win32' != platform, reason="requires the windows os")
 def test_usb_device_get_values_multi_comports():
     # multi com ports
     values = USBDevice.get_values(
@@ -137,6 +158,7 @@ def test_usb_device_get_values_multi_comports():
     assert values[1] == "COM10"
 
 
+@pytest.mark.skipif('win32' != platform, reason="requires the windows os")
 def test_usb_device_get_values_audio():
     # audio playback
     values = USBDevice.get_values(
@@ -175,6 +197,7 @@ def test_usb_device_get_values_audio():
     assert valueSubs[0] == "Microphone (USB Audio Device)"
 
 
+@pytest.mark.skipif('win32' != platform, reason="requires the windows os")
 def test_usb_device_get_values_driver_key():
     # driver key
     values = USBDevice.get_values(
@@ -186,60 +209,72 @@ def test_usb_device_get_values_driver_key():
 
 
 def test_usb_device_parse():
-    exportXMLFile = os.path.join(CUR_PATH, "export_test.xml")
-    tool = UsbTreeViewTool()
-    tool.parse(exportXMLFile)
+    if "win32" == platform:
+        exportXMLFile = os.path.join(CUR_PATH, "export_test.xml")
+        tool = UsbTreeViewTool()
+        tool.parse(exportXMLFile)
 
-    # serial port CP2102
-    usbPortDevice = tool.usbDevices[8]
-    assert usbPortDevice.deviceName == "Silicon Labs CP2102 USB to UART Bridge Controller - COM16"
-    assert usbPortDevice.portChain == "1-7-5"
-    assert usbPortDevice.locInfo == "Port_#0005.Hub_#0004"
-    assert usbPortDevice.deviceID == "USB\\VID_10C4&PID_EA60\\0001"
-    assert usbPortDevice.sn is None
-    assert usbPortDevice.get_com_port() == "COM16"
+        # serial port CP2102
+        usbPortDevice = tool.usbDevices[8]
+        assert usbPortDevice.deviceName == "Silicon Labs CP2102 USB to UART Bridge Controller - COM16"
+        assert usbPortDevice.portChain == "1-7-5"
+        assert usbPortDevice.locInfo == "Port_#0005.Hub_#0004"
+        assert usbPortDevice.deviceID == "USB\\VID_10C4&PID_EA60\\0001"
+        assert usbPortDevice.sn is None
+        assert usbPortDevice.get_com_port() == "COM16"
 
-    # CMSIS-DAP serial port
-    usbPortDevice = tool.usbDevices[9]
-    assert usbPortDevice.deviceName == "ARM mbed Composite Device - F:\\, COM18, HID"
-    assert usbPortDevice.portChain == "1-7-6"
-    assert usbPortDevice.locInfo == "Port_#0006.Hub_#0004"
-    assert usbPortDevice.deviceID == "USB\\VID_0D28&PID_0204\\0205000047784E4500349004D917002AE561000097969900"
-    assert usbPortDevice.sn == "0205000047784e4500349004d917002ae561000097969900"
-    assert usbPortDevice.get_com_port() == "COM18"
+        # CMSIS-DAP serial port
+        usbPortDevice = tool.usbDevices[9]
+        assert usbPortDevice.deviceName == "ARM mbed Composite Device - F:\\, COM18, HID"
+        assert usbPortDevice.portChain == "1-7-6"
+        assert usbPortDevice.locInfo == "Port_#0006.Hub_#0004"
+        assert usbPortDevice.deviceID == "USB\\VID_0D28&PID_0204\\0205000047784E4500349004D917002AE561000097969900"
+        assert usbPortDevice.sn == "0205000047784e4500349004d917002ae561000097969900"
+        assert usbPortDevice.get_com_port() == "COM18"
 
-    # multi serial ports IMX8
-    usbPortDevice = tool.usbDevices[0]
-    assert usbPortDevice.deviceName == "Future Devices International FTDI Quad RS232-HS - COM9, COM10, COM11, COM12"
-    assert usbPortDevice.portChain == "1-3-1"
-    assert usbPortDevice.locInfo == "Port_#0001.Hub_#0002"
-    assert usbPortDevice.deviceID == "USB\\VID_0403&PID_6011\\6&2ED78AA8&0&1"
-    assert usbPortDevice.sn is None
-    assert usbPortDevice.get_com_port() == "COM9"
-    assert usbPortDevice.get_com_port(1) == "COM10"
-    assert usbPortDevice.get_com_port(2) == "COM11"
-    assert usbPortDevice.get_com_port(3) == "COM12"
+        # multi serial ports IMX8
+        usbPortDevice = tool.usbDevices[0]
+        assert usbPortDevice.deviceName == "Future Devices International FTDI Quad RS232-HS - COM9, COM10, COM11, COM12"
+        assert usbPortDevice.portChain == "1-3-1"
+        assert usbPortDevice.locInfo == "Port_#0001.Hub_#0002"
+        assert usbPortDevice.deviceID == "USB\\VID_0403&PID_6011\\6&2ED78AA8&0&1"
+        assert usbPortDevice.sn is None
+        assert usbPortDevice.get_com_port() == "COM9"
+        assert usbPortDevice.get_com_port(1) == "COM10"
+        assert usbPortDevice.get_com_port(2) == "COM11"
+        assert usbPortDevice.get_com_port(3) == "COM12"
 
-    # USB audio
-    usbPortDevice = tool.usbDevices[4]
-    assert usbPortDevice.deviceName == "C-Media USB Audio Device - Audio, HID"
-    assert usbPortDevice.portChain == "1-3-7-3"
-    assert usbPortDevice.locInfo == "Port_#0003.Hub_#0003"
-    assert usbPortDevice.deviceID == "USB\\VID_0D8C&PID_0014\\7&B60E087&0&3"
-    assert usbPortDevice.sn is None
-    assert usbPortDevice.audioPlaybackName == "Speakers (USB Audio Device)"
-    assert usbPortDevice.audioRecordName == "Microphone (USB Audio Device)"
+        # USB audio
+        usbPortDevice = tool.usbDevices[4]
+        assert usbPortDevice.deviceName == "C-Media USB Audio Device - Audio, HID"
+        assert usbPortDevice.portChain == "1-3-7-3"
+        assert usbPortDevice.locInfo == "Port_#0003.Hub_#0003"
+        assert usbPortDevice.deviceID == "USB\\VID_0D8C&PID_0014\\7&B60E087&0&3"
+        assert usbPortDevice.sn is None
+        assert usbPortDevice.audioPlaybackName == "Speakers (USB Audio Device)"
+        assert usbPortDevice.audioRecordName == "Microphone (USB Audio Device)"
 
-    usbPortDevice = tool.usbDevices[5]
-    assert usbPortDevice.deviceName == "C-Media USB Audio Device - Audio, HID"
-    assert usbPortDevice.portChain == "1-3-7-4"
-    assert usbPortDevice.locInfo == "Port_#0004.Hub_#0003"
-    assert usbPortDevice.deviceID == "USB\\VID_0D8C&PID_0014\\7&B60E087&0&4"
-    assert usbPortDevice.sn is None
-    assert usbPortDevice.audioPlaybackName == "Speakers (4- USB Audio Device)"
-    assert usbPortDevice.audioRecordName == "Microphone (4- USB Audio Device)"
+        usbPortDevice = tool.usbDevices[5]
+        assert usbPortDevice.deviceName == "C-Media USB Audio Device - Audio, HID"
+        assert usbPortDevice.portChain == "1-3-7-4"
+        assert usbPortDevice.locInfo == "Port_#0004.Hub_#0003"
+        assert usbPortDevice.deviceID == "USB\\VID_0D8C&PID_0014\\7&B60E087&0&4"
+        assert usbPortDevice.sn is None
+        assert usbPortDevice.audioPlaybackName == "Speakers (4- USB Audio Device)"
+        assert usbPortDevice.audioRecordName == "Microphone (4- USB Audio Device)"
+    else:
+        tool = UsbTreeViewTool()
+        tool.parse_linux()
+        assert len(tool.usbDevices) > 1
+        usbPortDevice = tool.usbDevices[0]
+        assert len(usbPortDevice.deviceName) > 1
+        assert len(usbPortDevice.portChain) > 1
+        assert len(usbPortDevice.locInfo) > 1
+        assert len(usbPortDevice.deviceID) > 1
+        assert "COM" in usbPortDevice.get_com_port()
 
 
+@pytest.mark.skipif('win32' != platform, reason="requires the windows os")
 def test_usb_tree_view_tool_get_device():
     exportXMLFile = os.path.join(CUR_PATH, "export_test.xml")
     tool = UsbTreeViewTool()
@@ -304,6 +339,7 @@ def test_usb_tree_view_tool_get_device():
     assert device.audioRecordName == "Microphone (4- USB Audio Device)"
 
 
+@pytest.mark.skipif('win32' != platform, reason="requires the windows os")
 def test_usb_tree_view_tool_covert():
     exportXMLFile = os.path.join(CUR_PATH, "export_test.xml")
     tool = UsbTreeViewTool()

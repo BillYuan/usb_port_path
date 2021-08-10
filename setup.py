@@ -21,13 +21,20 @@
 # SOFTWARE.
 
 import os
+from sys import platform
 from setuptools import setup, find_packages
 
-version = '0.2.0'
+version = '0.2.1'
 
-install_requires = [
-    'tabulate'
-]
+if "win32" == platform:
+    install_requires = [
+        'tabulate'
+    ]
+else:
+    install_requires = [
+        'tabulate',
+        'pyserial'
+    ]
 
 version_file = os.path.join(os.path.dirname(
     os.path.abspath(__file__)), 'pyusb_chain/_version.py')

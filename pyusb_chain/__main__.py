@@ -136,10 +136,6 @@ class USBDevicesChain(object):
 
 
 def main():
-    if platform != "win32":
-        print("\nSorry, the pyusb-chain has not supported Linux/Mac OS!")
-        return
-
     usbDevicesChain = USBDevicesChain()
     usbDevicesChain.command_process()
     usbDevicesChain.process()

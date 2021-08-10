@@ -22,6 +22,7 @@
 
 import logging
 import re
+from sys import platform
 
 logger = logging.getLogger("pyusb_path")
 
@@ -178,11 +179,21 @@ class COMPortDevice(USBDevice):
         """Parse the XML information, to the get key values, for COM port USB device, will add com ports information.
         :return: None
         """
-        super(COMPortDevice, self).parse()
-        # parse COM ports, note that, for MPU boards, there are more than 1 USB COM port for the same USB port chain
-        comPortList = self.get_values(self.info, r"COM-Port\s*:\s*.*?\(", ["COM-Port", ":", r"\("])
-        if comPortList:
-            self.comPorts = comPortList
+        if "win32" == platform:
+            super(COMPortDevice, self).parse()
+            # parse COM ports, note that, for MPU boards, there are more than 1 USB COM port for the same USB port chain
+            comPortList = self.get_values(self.info, r"COM-Port\s*:\s*.*?\(", ["COM-Port", ":", r"\("])
+            if comPortList:
+                self.comPorts = comPortList
+        else:
+            self.deviceName = self.info.manufacturer
+            if self.info.location:
+                self.portChain = self.info.location.split(":")[0].replace(".", "-")
+            self.locInfo = self.info.hwid
+            self.deviceID = "USB\VID_{}&PID_{}".format(self.info.vid, self.info.pid)
+            self.sn = self.info.serial_number
+            if self.info.device:
+                self.comPorts = self.info.device.split(",")
 
     def get_com_port(self, index=0):
         """Get the com port name, if there are multi-com ports in the same USB device, need specify the index
