@@ -38,7 +38,10 @@ CUR_PATH = os.path.dirname(os.path.abspath(__file__))
 
 
 def test_commandline():
-    sys.argv = ['.\\__main__.py', '-g', '-l', '-f', 'COM12', '-e', '-v debug']
+    if "win32" == platform:
+        sys.argv = ['.\\__main__.py', '-g', '-l', '-f', 'COM12', '-e', '-v debug']
+    else:
+        sys.argv = ['.\\__main__.py', '-l', '-f', 'COM12', '-e', '-v debug']
     usbDevicesChain = USBDevicesChain()
     usbDevicesChain.command_process()
     if "win32" == platform:
