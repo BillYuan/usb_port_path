@@ -271,7 +271,7 @@ def test_usb_device_parse():
         assert len(usbPortDevice.portChain) > 1
         assert len(usbPortDevice.locInfo) > 1
         assert len(usbPortDevice.deviceID) > 1
-        assert "COM" in usbPortDevice.get_com_port()
+        assert "tty" in usbPortDevice.get_com_port()
 
 
 @pytest.mark.skipif('win32' != platform, reason="requires the windows os")
