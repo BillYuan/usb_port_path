@@ -56,7 +56,7 @@ class USBDevice(object):
 
         #: driverKey is the driver key name, there is a index at the end, which will be used to Altera Blaster
         #: (CPLD downloader) which one is the first #0, or secondary #1, .etc.
-        self.driveKey = 0
+        self.driverKey = 0
 
     def parse(self):
         """Parse the XML information, to the get key values.
@@ -88,7 +88,7 @@ class USBDevice(object):
         if driverKeyList:
             driverKey = driverKeyList[0]
             try:
-                self.driveKey = int(driverKey)
+                self.driverKey = int(driverKey)
             except Exception:
                 logger.exception("Fail to parse to get driver key index: {}".format(driverKey))
 
@@ -128,11 +128,11 @@ class USBDevice(object):
         return self.portChain
 
     def get_port(self, chain=None):
-        """The port name of the USB device, it's deviceID by default
+        """The port name of the USB device, it's None by default
         :param chain: interface to be used in child classes
         :return: the port name
         """
-        return self.deviceID
+        return None
 
     def export_data(self, allInfo=False, jsonFormat=False):
         """Export the USB device information to the data for Json exporting or table print
@@ -155,7 +155,7 @@ class USBDevice(object):
             d["SN"] = self.sn
             d["Location Info"] = self.locInfo
             d["Device ID"] = self.deviceID
-            d["Driver Key"] = self.driveKey
+            d["Driver Key"] = self.driverKey
         else:
             d = []
             d.append(self.portChain)
@@ -163,7 +163,7 @@ class USBDevice(object):
             d.append(self.deviceName)
             if allInfo:
                 d.append(self.sn)
-                d.append(self.driveKey)
+                d.append(self.driverKey)
         return d
 
 
@@ -372,4 +372,21 @@ class AudioDevice(USBDevice):
             else:
                 d[0] = "{}:{}".format(self.portChain, "Speaker")
                 d[1] = self.audioPlaybackName
+        return d
+
+
+class AlteraUSBBlaster(USBDevice):
+    def __init__(self, name, info):
+        super(AlteraUSBBlaster, self).__init__(name, info)
+        self.USBBlasterName = "USB-Blaster [USB-0]"   # default name
+
+    def get_port(self, chain=None):
+        return self.USBBlasterName
+
+    def _get_data(self, allInfo=False, isDict=False):
+        d = super(AlteraUSBBlaster, self)._get_data(allInfo=allInfo, isDict=isDict)
+        if isDict:
+            d["Port Name"] = self.get_port()
+        else:
+            d[1] = self.get_port()
         return d

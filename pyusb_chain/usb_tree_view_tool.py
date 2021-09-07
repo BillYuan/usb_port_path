@@ -29,7 +29,7 @@ from sys import platform
 if "win32" != platform:
     from serial.tools import list_ports
 import xml.etree.ElementTree as ET
-from pyusb_chain.usb_device import USBDevice, AudioDevice, COMPortDevice
+from pyusb_chain.usb_device import USBDevice, AudioDevice, COMPortDevice, AlteraUSBBlaster
 
 logger = logging.getLogger("pyusb_path")
 
@@ -98,6 +98,7 @@ class UsbTreeViewTool(object):
             return
 
         root = ET.parse(exportFile).getroot()
+        alteraDevices = []
         for tag in root.iter('node'):
             name = tag.get('text')
             if ":" in name:
@@ -108,14 +109,24 @@ class UsbTreeViewTool(object):
                 usbSerialDeviceReg = re.compile(r"COM\d")
                 usbAudioDeviceReg = re.compile("Audio")
                 usbAudioDeviceInfoReg = re.compile("Class\s*:\s*AudioEndpoint")
+                usbAlteraUSBBlasterReq = re.compile("Altera USB-Blaster")
                 if usbSerialDeviceReg.search(name):
                     usbDevice = COMPortDevice(name, info)
                 elif usbAudioDeviceReg.search(name) or usbAudioDeviceInfoReg.search(info):
                     usbDevice = AudioDevice(name, info)
+                elif usbAlteraUSBBlasterReq.search(name):
+                    usbDevice = AlteraUSBBlaster(name, info)
+                    alteraDevices.append(usbDevice)
                 else:
                     usbDevice = USBDevice(name, info)
                 usbDevice.parse()
                 self.usbDevices.append(usbDevice)
+        if alteraDevices:
+            alteraDevices.sort(key=lambda x: x.driverKey)
+            index = 0
+            for device in alteraDevices:
+                device.USBBlasterName = "USB-Blaster [USB-{}]".format(index)
+                index = index + 1
 
     def parse_linux(self):
         """Parse the USB serial by pyserial, note that it only support VCOM usb devices
