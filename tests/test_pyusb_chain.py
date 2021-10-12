@@ -110,6 +110,71 @@ def test_export_json():
         assert len(jsonData) > 1
 
 
+def test_export_printtable():
+    exportXMLFile = os.path.join(CUR_PATH, "export_test.xml")
+    tool = UsbTreeViewTool()
+    if "win32" == platform:
+        tool.parse(exportXMLFile)
+    else:
+        tool.parse_linux()
+    devices = tool.filter(None)
+    if "win32" == platform:
+        assert len(devices) == 13
+    else:
+        assert len(devices) > 1
+
+    # COMPortDevice
+    data = devices[0].export_data(True, jsonFormat=False)
+    assert data[0][0] == '1-3-1:0'
+    assert data[0][1] == 'COM9'
+    assert data[0][2] == 'Future Devices International FTDI Quad RS232-HS - COM9, COM10, COM11, COM12'
+    assert data[0][4] == 13
+    assert data[3][0] == '1-3-1:3'
+    assert data[3][1] == 'COM12'
+    assert data[1][2] == 'Future Devices International FTDI Quad RS232-HS - COM9, COM10, COM11, COM12'
+    assert data[3][4] == 13
+
+    data = devices[3].export_data(True, jsonFormat=False)
+    assert data[0][0] == '1-3-7-2'
+    assert data[0][1] == 'COM17'
+    assert data[0][2] == 'ARM mbed Composite Device - E:\\, COM17, HID'
+    assert data[0][3] == '0229000012979c5b00000000000000000000000097969905'
+    assert data[0][4] == 5
+
+    # AudioDevice
+    data = devices[4].export_data(True, jsonFormat=False)
+    assert data[0][0] == '1-3-7-3:Speaker'
+    assert data[0][1] == 'Speakers (USB Audio Device)'
+    assert data[0][2] == 'C-Media USB Audio Device - Audio, HID'
+    assert data[0][4] == 34
+    assert data[1][0] == '1-3-7-3:Microphone'
+    assert data[1][1] == 'Microphone (USB Audio Device)'
+    assert data[1][2] == 'C-Media USB Audio Device - Audio, HID'
+    assert data[1][4] == 34
+
+    # AudioCOMPortDevice
+    data = devices[12].export_data(True, jsonFormat=False)
+    assert data[0][0] == '1-24-1:Speaker'
+    assert data[0][1] == 'Speakers (4- USB AUDIO+CDC DEMO)'
+    assert data[0][2] == 'USB Composite Device - COM23'
+    assert data[0][4] == 62
+    assert data[1][0] == '1-24-1:Microphone'
+    assert data[1][1] == 'Microphone (4- USB AUDIO+CDC DEMO)'
+    assert data[1][2] == 'USB Composite Device - COM23'
+    assert data[1][4] == 62
+    assert data[2][0] == '1-24-1:COM23'
+    assert data[2][1] == 'COM23'
+    assert data[2][2] == 'USB Composite Device - COM23'
+    assert data[2][4] == 62
+
+    # USBDevice
+    data = devices[6].export_data(True, jsonFormat=False)
+    assert data[0][0] == '1-4'
+    assert data[0][1] == ''
+    assert data[0][2] == 'ASIX Elec AX88772C'
+    assert data[0][4] == 11
+
+
 @pytest.mark.skipif('win32' != platform, reason="requires the windows os")
 def test_usb_device_get_values_location_info():
     # base USB device

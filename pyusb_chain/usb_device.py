@@ -436,7 +436,7 @@ class AudioCOMPortDevice(AudioDevice):
 
     def _get_data(self, allInfo=False, isDict=False, portName=None):
         d = super(AudioCOMPortDevice, self)._get_data(allInfo, isDict, portName)
-        if "com" in portName:
+        if "com" in portName.lower():
             if isDict:
                 if portName:
                     d["Port Name"] = portName
