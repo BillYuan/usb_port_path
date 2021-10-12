@@ -56,7 +56,7 @@ class USBDevice(object):
 
         #: driverKey is the driver key name, there is a index at the end, which will be used to Altera Blaster
         #: (CPLD downloader) which one is the first #0, or secondary #1, .etc.
-        self.driveKey = 0
+        self.driverKey = 0
 
     def parse(self):
         """Parse the XML information, to the get key values.
@@ -88,7 +88,7 @@ class USBDevice(object):
         if driverKeyList:
             driverKey = driverKeyList[0]
             try:
-                self.driveKey = int(driverKey)
+                self.driverKey = int(driverKey)
             except Exception:
                 logger.exception("Fail to parse to get driver key index: {}".format(driverKey))
 
@@ -128,11 +128,11 @@ class USBDevice(object):
         return self.portChain
 
     def get_port(self, chain=None):
-        """The port name of the USB device, it's deviceID by default
+        """The port name of the USB device, it's None by default
         :param chain: interface to be used in child classes
         :return: the port name
         """
-        return self.deviceID
+        return None
 
     def export_data(self, allInfo=False, jsonFormat=False):
         """Export the USB device information to the data for Json exporting or table print
@@ -155,7 +155,7 @@ class USBDevice(object):
             d["SN"] = self.sn
             d["Location Info"] = self.locInfo
             d["Device ID"] = self.deviceID
-            d["Driver Key"] = self.driveKey
+            d["Driver Key"] = self.driverKey
         else:
             d = []
             d.append(self.portChain)
@@ -163,7 +163,7 @@ class USBDevice(object):
             d.append(self.deviceName)
             if allInfo:
                 d.append(self.sn)
-                d.append(self.driveKey)
+                d.append(self.driverKey)
         return d
 
 
@@ -181,19 +181,25 @@ class COMPortDevice(USBDevice):
         """
         if "win32" == platform:
             super(COMPortDevice, self).parse()
+        self.comPorts = self.get_com_port_list(self)
+
+    @staticmethod
+    def get_com_port_list(device):
+        if "win32" == platform:
             # parse COM ports, note that, for MPU boards, there are more than 1 USB COM port for the same USB port chain
-            comPortList = self.get_values(self.info, r"COM-Port\s*:\s*.*?\(", ["COM-Port", ":", r"\("])
+            comPortList = COMPortDevice.get_values(device.info, r"COM-Port\s*:\s*.*?\(", ["COM-Port", ":", r"\("])
             if comPortList:
-                self.comPorts = comPortList
+                return comPortList
         else:
-            self.deviceName = self.info.description
-            if self.info.location:
-                self.portChain = self.info.location.split(":")[0].replace(".", "-")
-            self.locInfo = self.info.hwid
-            self.deviceID = "USB/VID_{}&PID_{}".format(self.info.vid, self.info.pid)
-            self.sn = self.info.serial_number
-            if self.info.device:
-                self.comPorts = self.info.device.split(",")
+            device.deviceName = device.info.description
+            if device.info.location:
+                device.portChain = device.info.location.split(":")[0].replace(".", "-")
+            device.locInfo = device.info.hwid
+            device.deviceID = "USB/VID_{}&PID_{}".format(device.info.vid, device.info.pid)
+            device.sn = device.info.serial_number
+            if device.info.device:
+                return device.info.device.split(",")
+        return None
 
     def get_com_port(self, index=0):
         """Get the com port name, if there are multi-com ports in the same USB device, need specify the index
@@ -327,6 +333,7 @@ class AudioDevice(USBDevice):
             return "{}:Microphone".format(self.portChain)
         elif "sp" in port.lower():
             return "{}:Speaker".format(self.portChain)
+        return None
 
     def get_port(self, chain=None):
         """The port name of the USB device, it's Audio playback name or record name
@@ -372,4 +379,85 @@ class AudioDevice(USBDevice):
             else:
                 d[0] = "{}:{}".format(self.portChain, "Speaker")
                 d[1] = self.audioPlaybackName
+        return d
+
+
+class AudioCOMPortDevice(AudioDevice):
+    def __init__(self, name, info):
+        super(AudioCOMPortDevice, self).__init__(name, info)
+        self.comPorts = None
+
+    def parse(self):
+        """Parse the XML information, to the get key values, for COM port USB device, will add com ports information.
+        :return: None
+        """
+        super(AudioCOMPortDevice, self).parse()
+        self.comPorts = COMPortDevice.get_com_port_list(self)
+
+    def get_com_port(self, index=0):
+        """Get the com port name, if there are multi-com ports in the same USB device, need specify the index
+        :return: the com port name, like COM16
+        """
+        if not self.comPorts:
+            return None
+        return self.comPorts[0]  # only support 1 COM port so far
+
+    def get_key(self, port="speaker"):
+        """The key of the USB device, it's port chain with ":Speaker" or ":Microphone" or ":COM"
+        :param port: port name to identify the Speaker or Microphone
+        :return: the key port chain with ":Speaker" or ":Microphone"
+        """
+        if "com" in port.lower():
+            return "{}:{}".format(self.portChain, self.get_com_port())
+        return super(AudioCOMPortDevice, self).get_key(port)
+
+    def get_port(self, chain=None):
+        """The port name of the USB device, it's Audio playback name or record name or comport name
+        :param chain: the port chain with additional audio type
+        :return: the port name
+        """
+        if "com" in chain.lower():
+            return self.get_com_port()
+        return super(AudioCOMPortDevice, self).get_port(chain)
+
+    def export_data(self, allInfo=False, jsonFormat=False):
+        """Export the USB device information to the data for Json exporting or table print
+        :param allInfo: Add all SN and Driver Key info in the list data (jsonFormat is False)
+        :param jsonFormat: is dict data for json exporting, default is False
+        :return: the data of dict or list
+        """
+        data = super(AudioCOMPortDevice, self).export_data(allInfo, jsonFormat)
+        if jsonFormat:
+            data["{}:{}".format(self.portChain, self.get_com_port())] = self._get_data(isDict=True, portName=self.get_com_port())
+        else:
+            if self.get_com_port():
+                data.append(self._get_data(allInfo=allInfo, isDict=False, portName=self.get_com_port()))
+        return data
+
+    def _get_data(self, allInfo=False, isDict=False, portName=None):
+        d = super(AudioCOMPortDevice, self)._get_data(allInfo, isDict, portName)
+        if "com" in portName:
+            if isDict:
+                if portName:
+                    d["Port Name"] = portName
+            else:
+                d[0] = "{}:{}".format(self.portChain, self.get_com_port())
+                d[1] = self.get_com_port()
+        return d
+
+
+class AlteraUSBBlaster(USBDevice):
+    def __init__(self, name, info):
+        super(AlteraUSBBlaster, self).__init__(name, info)
+        self.USBBlasterName = "USB-Blaster [USB-0]"   # default name
+
+    def get_port(self, chain=None):
+        return self.USBBlasterName
+
+    def _get_data(self, allInfo=False, isDict=False):
+        d = super(AlteraUSBBlaster, self)._get_data(allInfo=allInfo, isDict=isDict)
+        if isDict:
+            d["Port Name"] = self.get_port()
+        else:
+            d[1] = self.get_port()
         return d
