@@ -67,7 +67,7 @@ def test_usb_tree_parse():
     exportXMLFile = os.path.join(CUR_PATH, "export_test.xml")
     tool = UsbTreeViewTool()
     tool.parse(exportXMLFile)
-    assert len(tool.usbDevices) == 12
+    assert len(tool.usbDevices) == 13
 
 
 def test_filter_data():
@@ -79,7 +79,7 @@ def test_filter_data():
         assert len(devices) == 1
 
         devices = tool.filter("Audio")
-        assert len(devices) == 3
+        assert len(devices) == 4
 
         devices = tool.filter("CP2102")
         assert len(devices) == 2
@@ -105,7 +105,7 @@ def test_export_json():
         jsonData = json.loads(f.read())
     os.remove(USBDevicesChain.EXPORT_JSON_NAME)
     if "win32" == platform:
-        assert len(jsonData) == 20
+        assert len(jsonData) == 23
     else:
         assert len(jsonData) > 1
 
@@ -265,6 +265,16 @@ def test_usb_device_parse():
         assert usbPortDevice.sn is None
         assert usbPortDevice.audioPlaybackName == "Speakers (4- USB Audio Device)"
         assert usbPortDevice.audioRecordName == "Microphone (4- USB Audio Device)"
+
+        usbPortDevice = tool.usbDevices[12]
+        assert usbPortDevice.deviceName == "USB Composite Device - COM23"
+        assert usbPortDevice.portChain == "1-24-1"
+        assert usbPortDevice.locInfo == "Port_#0001.Hub_#0008"
+        assert usbPortDevice.deviceID == "USB\\VID_1FC9&PID_00A6\\6&4180336&0&1"
+        assert usbPortDevice.sn is None
+        assert usbPortDevice.audioPlaybackName == "Speakers (4- USB AUDIO+CDC DEMO)"
+        assert usbPortDevice.audioRecordName == "Microphone (4- USB AUDIO+CDC DEMO)"
+        assert usbPortDevice.get_com_port() == "COM23"
     else:
         tool = UsbTreeViewTool()
         tool.parse_linux()
@@ -341,6 +351,16 @@ def test_usb_tree_view_tool_get_device():
     assert device.audioPlaybackName == "Speakers (4- USB Audio Device)"
     assert device.audioRecordName == "Microphone (4- USB Audio Device)"
 
+    device = tool.get_from_port("Speakers (4- USB AUDIO+CDC DEMO)")
+    assert device.portChain == "1-24-1"
+    assert device.audioPlaybackName == "Speakers (4- USB AUDIO+CDC DEMO)"
+    assert device.audioRecordName == "Microphone (4- USB AUDIO+CDC DEMO)"
+    assert device.get_com_port() == "COM23"
+    assert device.get_key("COM23") == "1-24-1:COM23"
+    assert device.get_key("Speaker") == "1-24-1:Speaker"
+    assert device.get_key("Microphone") == "1-24-1:Microphone"
+    assert tool.get_from_port("COM23") == device
+
 
 @pytest.mark.skipif('win32' != platform, reason="requires the windows os")
 def test_usb_tree_view_tool_covert():
@@ -361,3 +381,9 @@ def test_usb_tree_view_tool_covert():
     assert tool.get_port_from_chain("1-3-7-4:Speaker") == "Speakers (4- USB Audio Device)"
     assert tool.get_chain_from_port("Microphone (4- USB Audio Device)") == "1-3-7-4:Microphone"
     assert tool.get_port_from_chain("1-3-7-4:Microphone") == "Microphone (4- USB Audio Device)"
+    assert tool.get_chain_from_port("COM23") == "1-24-1:COM23"
+    assert tool.get_port_from_chain("1-24-1:COM") == "COM23"
+    assert tool.get_chain_from_port("Speakers (4- USB AUDIO+CDC DEMO)") == "1-24-1:Speaker"
+    assert tool.get_port_from_chain("1-24-1:Speaker") == "Speakers (4- USB AUDIO+CDC DEMO)"
+    assert tool.get_chain_from_port("Microphone (4- USB AUDIO+CDC DEMO)") == "1-24-1:Microphone"
+    assert tool.get_port_from_chain("1-24-1:Microphone") == "Microphone (4- USB AUDIO+CDC DEMO)"

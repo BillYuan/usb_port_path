@@ -29,7 +29,7 @@ from sys import platform
 if "win32" != platform:
     from serial.tools import list_ports
 import xml.etree.ElementTree as ET
-from pyusb_chain.usb_device import USBDevice, AudioDevice, COMPortDevice, AlteraUSBBlaster
+from pyusb_chain.usb_device import USBDevice, AudioDevice, AudioCOMPortDevice, COMPortDevice, AlteraUSBBlaster
 
 logger = logging.getLogger("pyusb_path")
 
@@ -111,9 +111,15 @@ class UsbTreeViewTool(object):
                 usbAudioDeviceInfoReg = re.compile("Class\s*:\s*AudioEndpoint")
                 usbAlteraUSBBlasterReq = re.compile("Altera USB-Blaster")
                 if usbSerialDeviceReg.search(name):
-                    usbDevice = COMPortDevice(name, info)
+                    if usbAudioDeviceReg.search(name) or usbAudioDeviceInfoReg.search(info):
+                        usbDevice = AudioCOMPortDevice(name, info)
+                    else:
+                        usbDevice = COMPortDevice(name, info)
                 elif usbAudioDeviceReg.search(name) or usbAudioDeviceInfoReg.search(info):
-                    usbDevice = AudioDevice(name, info)
+                    if usbSerialDeviceReg.search(name):
+                        usbDevice = AudioCOMPortDevice(name, info)
+                    else:
+                        usbDevice = AudioDevice(name, info)
                 elif usbAlteraUSBBlasterReq.search(name):
                     usbDevice = AlteraUSBBlaster(name, info)
                     alteraDevices.append(usbDevice)
@@ -181,7 +187,10 @@ class UsbTreeViewTool(object):
             return None
 
         for device in self.usbDevices:
-            if isinstance(device, AudioDevice):
+            if isinstance(device, AudioCOMPortDevice):
+                if port == device.audioPlaybackName or port == device.audioRecordName or port in device.comPorts:
+                    return device
+            elif isinstance(device, AudioDevice):
                 if port == device.audioPlaybackName or port == device.audioRecordName:
                     return device
             elif isinstance(device, COMPortDevice):
@@ -190,6 +199,7 @@ class UsbTreeViewTool(object):
             elif isinstance(device, USBDevice):
                 if port == device.deviceID:
                     return device
+
         logger.warning("Cannot get USB device from port: {}!".format(port))
         return None
 

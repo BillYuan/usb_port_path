@@ -24,7 +24,7 @@ import os
 from sys import platform
 from setuptools import setup, find_packages
 
-version = '0.2.2'
+version = '0.2.4'
 
 if "win32" == platform:
     install_requires = [
