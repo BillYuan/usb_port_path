@@ -21,7 +21,6 @@
 # SOFTWARE.
 
 import logging
-from sys import platform
 from pyusb_chain.devices.audio_device import AudioDevice
 from pyusb_chain.devices.comport_device import COMPortDevice
 logger = logging.getLogger("pyusb_path")

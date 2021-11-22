@@ -23,6 +23,7 @@
 import logging
 from sys import platform
 from pyusb_chain.devices.usb_device import USBDevice
+from pyusb_chain.utility import get_values
 logger = logging.getLogger("pyusb_path")
 
 
@@ -46,7 +47,7 @@ class COMPortDevice(USBDevice):
     def get_com_port_list(device):
         if "win32" == platform:
             # parse COM ports, note that, for MPU boards, there are more than 1 USB COM port for the same USB port chain
-            comPortList = COMPortDevice.get_values(device.info, r"COM-Port\s*:\s*.*?\(", ["COM-Port", ":", r"\("])
+            comPortList = get_values(device.info, r"COM-Port\s*:\s*.*?\(", ["COM-Port", ":", r"\("])
             if comPortList:
                 return comPortList
         else:

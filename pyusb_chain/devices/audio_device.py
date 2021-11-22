@@ -22,6 +22,7 @@
 
 import logging
 from pyusb_chain.devices.usb_device import USBDevice
+from pyusb_chain.utility import get_values
 logger = logging.getLogger("pyusb_path")
 
 
@@ -39,10 +40,10 @@ class AudioDevice(USBDevice):
         # parse audio playback
         # search Child Device ... with Class : AudioEndpoint
         # then parser the Audio Port name from Child Device, note that '(Audio Endpoint)' should be excluded.
-        audioList = self.get_values(self.info, r"Child Device \d\s*:.*\s*Device ID.*?\s*Class\s*:\s*AudioEndpoint\s*")
+        audioList = get_values(self.info, r"Child Device \d\s*:.*\s*Device ID.*?\s*Class\s*:\s*AudioEndpoint\s*")
         if audioList:
             for audioInfo in audioList:
-                audioInfoList = self.get_values(audioInfo, r"Child Device \d\s*:\s*.*?\r\n\s*Device ID",
+                audioInfoList = get_values(audioInfo, r"Child Device \d\s*:\s*.*?\r\n\s*Device ID",
                                                 [r"Child Device \d", ":", r"\(Audio Endpoint\)", "Device ID"])
                 self.__parse_audio_port_name(audioInfoList)
 

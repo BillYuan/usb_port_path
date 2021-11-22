@@ -21,8 +21,7 @@
 # SOFTWARE.
 
 import logging
-import re
-
+from pyusb_chain.utility import get_values
 logger = logging.getLogger("pyusb_path")
 
 
@@ -65,24 +64,24 @@ class USBDevice(object):
         self.deviceName = self.name.replace("[{}] :".format(self.portChain), "").strip()
 
         # parse location information
-        locInfoList = self.get_values(self.info, r"\r\nLocation Info\s*:\s*.*?\r\n", ["Location Info", ":"])
+        locInfoList = get_values(self.info, r"\r\nLocation Info\s*:\s*.*?\r\n", ["Location Info", ":"])
         if locInfoList:
             self.locInfo = locInfoList[0]
 
         # parse device ID
-        deviceIDList = self.get_values(self.info, r"\r\nDevice ID\s*:\s*.*?\r\n", ["Device ID", ":"])
+        deviceIDList = get_values(self.info, r"\r\nDevice ID\s*:\s*.*?\r\n", ["Device ID", ":"])
         if deviceIDList:
             self.deviceID = deviceIDList[0]
 
         # parse sn
-        snList = self.get_values(self.info, r"\r\niSerialNumber.*?\r\n Language 0x0409\s*:\s*.*?\r\n",
+        snList = get_values(self.info, r"\r\niSerialNumber.*?\r\n Language 0x0409\s*:\s*.*?\r\n",
                                  ["iSerialNumber.*?\r\n", "Language 0x0409", ":", "\""])
         if snList:
             self.sn = snList[0]
 
         # parse driver key, conver to index
         # which is used to get the index priority for Altera blaster list
-        driverKeyList = self.get_values(self.info, r"\r\nDriver KeyName\s*:\s*.*?\(",
+        driverKeyList = get_values(self.info, r"\r\nDriver KeyName\s*:\s*.*?\(",
                                  ["Driver KeyName", ":", r"\(", r"\{.*\}", r"\\"])
         if driverKeyList:
             driverKey = driverKeyList[0]
@@ -90,34 +89,6 @@ class USBDevice(object):
                 self.driverKey = int(driverKey)
             except Exception:
                 logger.exception("Fail to parse to get driver key index: {}".format(driverKey))
-
-    @staticmethod
-    def get_values(text, reg, excludeWrappers=None):
-        """Use regular expression and exclude wrappers to get the final required string
-        :param text: the full original string
-        :param reg:  regular expression to search
-        :param excludeWrappers: to be excluded after getting from the reg search, use ',' to separate multi-wrappers.
-        :return: all matched values list
-        """
-        values = []
-        if not text:
-            return values
-
-        try:
-            pattern = re.compile(reg)
-            matched = pattern.findall(text)
-            if matched and len(matched) > 0:
-                for v in matched:
-                    if excludeWrappers:
-                        s = v
-                        for wrapper in excludeWrappers:
-                            s = re.sub(wrapper, "", s)
-                        values.append(s.strip())
-                    else:
-                        values.append(v.strip())
-        except Exception:
-            logger.exception("invalid parse to get value: {}".format(reg))
-        return values
 
     def get_key(self, port=None):
         """The key of the USB device, it's port chain by default
