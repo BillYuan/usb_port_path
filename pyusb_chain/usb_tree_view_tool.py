@@ -29,7 +29,11 @@ from sys import platform
 if "win32" != platform:
     from serial.tools import list_ports
 import xml.etree.ElementTree as ET
-from pyusb_chain.usb_device import USBDevice, AudioDevice, AudioCOMPortDevice, COMPortDevice, AlteraUSBBlaster
+from pyusb_chain.devices.usb_device import USBDevice
+from pyusb_chain.devices.comport_device import COMPortDevice
+from pyusb_chain.devices.audio_device import AudioDevice
+from pyusb_chain.devices.audio_comport_device import AudioCOMPortDevice
+from pyusb_chain.devices.altera_device import AlteraUSBBlaster
 
 logger = logging.getLogger("pyusb_path")
 

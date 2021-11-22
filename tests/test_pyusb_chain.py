@@ -27,12 +27,11 @@ import sys
 import os
 import io
 from sys import platform
-import xml.etree.ElementTree as ET
 
 sys.path.append("..")
 from pyusb_chain.__main__ import USBDevicesChain
 from pyusb_chain.usb_tree_view_tool import UsbTreeViewTool
-from pyusb_chain.usb_device import USBDevice
+from pyusb_chain.devices.usb_device import USBDevice
 
 CUR_PATH = os.path.dirname(os.path.abspath(__file__))
 
