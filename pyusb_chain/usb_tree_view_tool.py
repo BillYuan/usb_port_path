@@ -29,7 +29,13 @@ from sys import platform
 if "win32" != platform:
     from serial.tools import list_ports
 import xml.etree.ElementTree as ET
-from pyusb_chain.usb_device import USBDevice, AudioDevice, AudioCOMPortDevice, COMPortDevice, AlteraUSBBlaster
+from pyusb_chain.devices.usb_device import USBDevice
+from pyusb_chain.devices.comport_device import COMPortDevice
+from pyusb_chain.devices.audio_device import AudioDevice
+from pyusb_chain.devices.audio_comport_device import AudioCOMPortDevice
+from pyusb_chain.devices.altera_device import AlteraUSBBlaster
+from pyusb_chain.devices.dsc_fsl_mc56_board import DSCFSLMC56Board
+from pyusb_chain.utility import get_values
 
 logger = logging.getLogger("pyusb_path")
 
@@ -39,11 +45,16 @@ class UsbTreeViewTool(object):
     UsbTreeView.exe in Windows.
     To get the all connected USB devices information, including the USB port chain.
     """
+
+    VID_DSC_FSL_MC56 = "0x15A2"
+    PID_DSC_FSL_MC56 = "0x005E"
+
     def __init__(self):
         self.currentPath = os.path.dirname(os.path.abspath(__file__))
 
         #: Store the scanned all connected USB devices (not including USB hubs)
         self.usbDevices = []
+        self.root = None
 
         if "win32" == platform:
             #: The UsbTreeView.exe location
@@ -97,20 +108,32 @@ class UsbTreeViewTool(object):
         if "win32" != platform:
             return
 
-        root = ET.parse(exportFile).getroot()
+        self.load(exportFile)
+        if not self.root:
+            logger.error("loading failure to get empty root")
+            return
+
         alteraDevices = []
-        for tag in root.iter('node'):
+        DSCFSLDevices = []
+        for tag in self.root.iter('node'):
             name = tag.get('text')
             if ":" in name:
                 usbHubReg = re.compile(r"Generic .* Hub")
                 if usbHubReg.search(name):
                     continue
                 info = tag[0].text
+
+                vendorID, productID = self.get_vid_pid(info)
+
                 usbSerialDeviceReg = re.compile(r"COM\d")
                 usbAudioDeviceReg = re.compile("Audio")
                 usbAudioDeviceInfoReg = re.compile("Class\s*:\s*AudioEndpoint")
                 usbAlteraUSBBlasterReq = re.compile("Altera USB-Blaster")
-                if usbSerialDeviceReg.search(name):
+
+                if self.VID_DSC_FSL_MC56 == vendorID and self.PID_DSC_FSL_MC56 == productID:
+                    usbDevice = DSCFSLMC56Board(name, info)
+                    DSCFSLDevices.append(usbDevice)
+                elif usbSerialDeviceReg.search(name):
                     if usbAudioDeviceReg.search(name) or usbAudioDeviceInfoReg.search(info):
                         usbDevice = AudioCOMPortDevice(name, info)
                     else:
@@ -127,12 +150,39 @@ class UsbTreeViewTool(object):
                     usbDevice = USBDevice(name, info)
                 usbDevice.parse()
                 self.usbDevices.append(usbDevice)
+
+        # reorder the alter CPLD downloaders
         if alteraDevices:
             alteraDevices.sort(key=lambda x: x.driverKey)
             index = 0
             for device in alteraDevices:
                 device.USBBlasterName = "USB-Blaster [USB-{}]".format(index)
                 index = index + 1
+
+        # reorder the DSC FSL boards
+        if DSCFSLDevices:
+            DSCFSLDevices.sort(key=lambda x: x.driverKey)
+            index = 1
+            for device in DSCFSLDevices:
+                device.downloadSN = "USB{}".format(index)
+                device.deviceName = "{} - [{}]".format(device.deviceName, device.downloadSN)
+                index = index + 1
+
+    def load(self, exportFile):
+        self.root = ET.parse(exportFile).getroot()
+
+    @staticmethod
+    def get_vid_pid(info):
+        vendorID = None
+        vendorInfo = get_values(info, r"\r\nVendor ID\s*:\s*.*?\(", ["Vendor ID", ":", r"\("])
+        if vendorInfo:
+            vendorID = vendorInfo[0]
+        productID = None
+        productInfo = get_values(info, r"\r\nProduct ID\s*:\s*.*?\r\n", ["Product ID", ":"])
+        if productInfo:
+            productID = productInfo[0]
+
+        return vendorID, productID
 
     def parse_linux(self):
         """Parse the USB serial by pyserial, note that it only support VCOM usb devices

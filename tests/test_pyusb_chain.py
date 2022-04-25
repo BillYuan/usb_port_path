@@ -27,12 +27,11 @@ import sys
 import os
 import io
 from sys import platform
-import xml.etree.ElementTree as ET
 
 sys.path.append("..")
 from pyusb_chain.__main__ import USBDevicesChain
 from pyusb_chain.usb_tree_view_tool import UsbTreeViewTool
-from pyusb_chain.usb_device import USBDevice
+from pyusb_chain.utility import get_values
 
 CUR_PATH = os.path.dirname(os.path.abspath(__file__))
 
@@ -67,7 +66,7 @@ def test_usb_tree_parse():
     exportXMLFile = os.path.join(CUR_PATH, "export_test.xml")
     tool = UsbTreeViewTool()
     tool.parse(exportXMLFile)
-    assert len(tool.usbDevices) == 13
+    assert len(tool.usbDevices) == 15
 
 
 def test_filter_data():
@@ -105,15 +104,80 @@ def test_export_json():
         jsonData = json.loads(f.read())
     os.remove(USBDevicesChain.EXPORT_JSON_NAME)
     if "win32" == platform:
-        assert len(jsonData) == 23
+        assert len(jsonData) == 25
     else:
         assert len(jsonData) > 1
+
+
+def test_export_printtable():
+    exportXMLFile = os.path.join(CUR_PATH, "export_test.xml")
+    tool = UsbTreeViewTool()
+    if "win32" == platform:
+        tool.parse(exportXMLFile)
+    else:
+        tool.parse_linux()
+    devices = tool.filter(None)
+    if "win32" == platform:
+        assert len(devices) == 15
+    else:
+        assert len(devices) > 1
+
+    # COMPortDevice
+    data = devices[0].export_data(True, jsonFormat=False)
+    assert data[0][0] == '1-3-1:0'
+    assert data[0][1] == 'COM9'
+    assert data[0][2] == 'Future Devices International FTDI Quad RS232-HS - COM9, COM10, COM11, COM12'
+    assert data[0][4] == 13
+    assert data[3][0] == '1-3-1:3'
+    assert data[3][1] == 'COM12'
+    assert data[1][2] == 'Future Devices International FTDI Quad RS232-HS - COM9, COM10, COM11, COM12'
+    assert data[3][4] == 13
+
+    data = devices[3].export_data(True, jsonFormat=False)
+    assert data[0][0] == '1-3-7-2'
+    assert data[0][1] == 'COM17'
+    assert data[0][2] == 'ARM mbed Composite Device - E:\\, COM17, HID'
+    assert data[0][3] == '0229000012979c5b00000000000000000000000097969905'
+    assert data[0][4] == 5
+
+    # AudioDevice
+    data = devices[4].export_data(True, jsonFormat=False)
+    assert data[0][0] == '1-3-7-3:Speaker'
+    assert data[0][1] == 'Speakers (USB Audio Device)'
+    assert data[0][2] == 'C-Media USB Audio Device - Audio, HID'
+    assert data[0][4] == 34
+    assert data[1][0] == '1-3-7-3:Microphone'
+    assert data[1][1] == 'Microphone (USB Audio Device)'
+    assert data[1][2] == 'C-Media USB Audio Device - Audio, HID'
+    assert data[1][4] == 34
+
+    # AudioCOMPortDevice
+    data = devices[12].export_data(True, jsonFormat=False)
+    assert data[0][0] == '1-24-1:Speaker'
+    assert data[0][1] == 'Speakers (4- USB AUDIO+CDC DEMO)'
+    assert data[0][2] == 'USB Composite Device - COM23'
+    assert data[0][4] == 62
+    assert data[1][0] == '1-24-1:Microphone'
+    assert data[1][1] == 'Microphone (4- USB AUDIO+CDC DEMO)'
+    assert data[1][2] == 'USB Composite Device - COM23'
+    assert data[1][4] == 62
+    assert data[2][0] == '1-24-1:COM23'
+    assert data[2][1] == 'COM23'
+    assert data[2][2] == 'USB Composite Device - COM23'
+    assert data[2][4] == 62
+
+    # USBDevice
+    data = devices[6].export_data(True, jsonFormat=False)
+    assert data[0][0] == '1-4'
+    assert data[0][1] == ''
+    assert data[0][2] == 'ASIX Elec AX88772C'
+    assert data[0][4] == 11
 
 
 @pytest.mark.skipif('win32' != platform, reason="requires the windows os")
 def test_usb_device_get_values_location_info():
     # base USB device
-    values = USBDevice.get_values(
+    values = get_values(
         "\r\nService : silabser\r\nEnumerator : USB\r\nLocation Info : Port_#0002.Hub_#0008\r\nLocation IDs: PCIROOT\r\n",
         r"\r\nLocation Info\s*:\s*.*?\r\n", ["Location Info", ":"])
     assert len(values) == 1
@@ -122,7 +186,7 @@ def test_usb_device_get_values_location_info():
 
 @pytest.mark.skipif('win32' != platform, reason="requires the windows os")
 def test_usb_device_get_values_device_id():
-    values = USBDevice.get_values(
+    values = get_values(
         "\r\nKernel Name: \\Device\\USBPDO-24\r\nDevice ID  : USB\\VID_10C4&PID_EA60\\EVKMIMXRT1170_1_A\r\nHardware IDs : USB\\VID_10C4&PID_EA60&REV_0100 USB\\VID_10C4&PID_EA60",
         r"\r\nDevice ID\s*:\s*.*?\r\n", ["Device ID", ":"])
     assert len(values) == 1
@@ -132,7 +196,7 @@ def test_usb_device_get_values_device_id():
 @pytest.mark.skipif('win32' != platform, reason="requires the windows os")
 def test_usb_device_get_values_sn():
     # base USB device SN
-    values = USBDevice.get_values(
+    values = get_values(
         'iProduct: 0x02 (String Descriptor 2)\r\n Language 0x0409 : "CP2102 USB to UART Bridge"\r\niSerialNumber: 0x03 (String Descriptor 3)\r\n Language 0x0409         : "evkmimxrt1170_1_a"\r\nbNumConfigurations       : 0x01 (1 Configuration)"',
         r"\r\niSerialNumber.*?\r\n Language 0x0409\s*:\s*.*?\r\n",
         ["iSerialNumber.*?\r\n", "Language 0x0409", ":", "\""])
@@ -143,7 +207,7 @@ def test_usb_device_get_values_sn():
 @pytest.mark.skipif('win32' != platform, reason="requires the windows os")
 def test_usb_device_get_values_comport():
     # Com port
-    values = USBDevice.get_values(
+    values = get_values(
         'Power State : D0 (supported: D0, D2, D3, wake from D0, wake from D2)\r\nCOM-Port : COM16 (\\Device\\Silabser0)\r\n',
         r"COM-Port\s*:\s*.*?\(", ["COM-Port", ":", r"\("])
     assert len(values) == 1
@@ -153,7 +217,7 @@ def test_usb_device_get_values_comport():
 @pytest.mark.skipif('win32' != platform, reason="requires the windows os")
 def test_usb_device_get_values_multi_comports():
     # multi com ports
-    values = USBDevice.get_values(
+    values = get_values(
         'Power State : D0 (supported: D0, D2, D3, wake from D0, wake from D2)\r\nCOM-Port : COM16 (\\Device\\Silabser0)\r\nService : FTSER2K\r\n  COM-Port: COM10 (\\Device\\VCP1)',
         r"COM-Port\s*:\s*.*?\(", ["COM-Port", ":", r"\("])
     assert len(values) == 2
@@ -164,37 +228,37 @@ def test_usb_device_get_values_multi_comports():
 @pytest.mark.skipif('win32' != platform, reason="requires the windows os")
 def test_usb_device_get_values_audio():
     # audio playback
-    values = USBDevice.get_values(
+    values = get_values(
         ' Child Device 1        : Speakers (USB Audio Device) (Audio Endpoint)\r\n  Device ID \r\n',
         r"Child Device \d\s*:\s*.*?\(Audio Endpoint\)", [r"Child Device \d", ":", r"\(Audio Endpoint\)"])
     assert len(values) == 1
     assert values[0] == "Speakers (USB Audio Device)"
 
-    values = USBDevice.get_values(
+    values = get_values(
         ' Child Device 4        : Speakers (USB Audio Device) (Audio Endpoint)\r\n  Device ID \r\n',
         r"Child Device \d\s*:\s*.*?\(Audio Endpoint\)", [r"Child Device \d", ":", r"\(Audio Endpoint\)"])
     assert len(values) == 1
     assert values[0] == "Speakers (USB Audio Device)"
 
     # audio record
-    values = USBDevice.get_values(
+    values = get_values(
         ' Child Device 2        : Microphone (USB Audio Device) (Audio Endpoint)\r\n  Device ID \r\n',
         r"Child Device \d\s*:\s*.*?\(Audio Endpoint\)", [r"Child Device \d", ":", r"\(Audio Endpoint\)"])
     assert len(values) == 1
     assert values[0] == "Microphone (USB Audio Device)"
 
     # search class: Audio Endpoint, then get the Chide Device
-    values = USBDevice.get_values(
+    values = get_values(
         '\r\n Child Device 1 : Speakers_rt1050_b2b_hs0 (3- USB Audio Device)\r\n  Device ID \r\n Class : AudioEndpoint\r\nDriver KeyName\r\n\
         \r\n  Child Device 2        : Microphone (USB Audio Device) (Audio Endpoint)\r\n  Device ID \r\n Class : AudioEndpoint\r\n',
         r"\r\n\s+Child Device \d\s*:.*\s*Device ID.*?\s*Class\s*:\s*AudioEndpoint\s*")
     assert len(values) == 2
-    valueSubs = USBDevice.get_values(values[0], r"Child Device \d\s*:\s*.*?\r\n\s*Device ID",
+    valueSubs = get_values(values[0], r"Child Device \d\s*:\s*.*?\r\n\s*Device ID",
                                      [r"Child Device \d", ":", r"\(Audio Endpoint\)", "Device ID"])
     assert len(valueSubs) == 1
     assert valueSubs[0] == "Speakers_rt1050_b2b_hs0 (3- USB Audio Device)"
 
-    valueSubs = USBDevice.get_values(values[1], r"Child Device \d\s*:\s*.*?\r\n\s*Device ID",
+    valueSubs = get_values(values[1], r"Child Device \d\s*:\s*.*?\r\n\s*Device ID",
                                      [r"Child Device \d", ":", r"\(Audio Endpoint\)", "Device ID"])
     assert len(valueSubs) == 1
     assert valueSubs[0] == "Microphone (USB Audio Device)"
@@ -203,12 +267,24 @@ def test_usb_device_get_values_audio():
 @pytest.mark.skipif('win32' != platform, reason="requires the windows os")
 def test_usb_device_get_values_driver_key():
     # driver key
-    values = USBDevice.get_values(
+    values = get_values(
         'PID_6001\r\nDriver KeyName: {36fc9e60-c465-11cf-8056-444553540000}\\0027 (GUID_DEVCLASS_USB)\r\nDriver',
         r"\r\nDriver KeyName\s*:\s*.*?\(", ["Driver KeyName", ":", r"\(", r"\{.*\}", r"\\"])
     assert len(values) == 1
     assert values[0] == "0027"
     assert int(values[0]) == 27
+
+
+@pytest.mark.skipif('win32' != platform, reason="requires the windows os")
+def test_usb_tree_get_vid_pid():
+    exportXMLFile = os.path.join(CUR_PATH, "export_test.xml")
+    tool = UsbTreeViewTool()
+    tool.load(exportXMLFile)
+
+    info = tool.root[0][1][1][26][0].text
+    vid, pid = UsbTreeViewTool.get_vid_pid(info)
+    assert vid == UsbTreeViewTool.VID_DSC_FSL_MC56
+    assert pid == UsbTreeViewTool.PID_DSC_FSL_MC56
 
 
 def test_usb_device_parse():
@@ -275,6 +351,12 @@ def test_usb_device_parse():
         assert usbPortDevice.audioPlaybackName == "Speakers (4- USB AUDIO+CDC DEMO)"
         assert usbPortDevice.audioRecordName == "Microphone (4- USB AUDIO+CDC DEMO)"
         assert usbPortDevice.get_com_port() == "COM23"
+
+        usbPortDevice = tool.usbDevices[13]
+        assert "[USB1]" in usbPortDevice.deviceName
+
+        usbPortDevice = tool.usbDevices[14]
+        assert "[USB2]" in usbPortDevice.deviceName
     else:
         tool = UsbTreeViewTool()
         tool.parse_linux()
